@@ -1,4 +1,4 @@
-﻿namespace IndustryConnect_Week5_WebApi.Dtos
+﻿namespace IndustryConnect_Week5_WebApi.ApplicationTier.Dtos
 {
     public class ProductDto
     {

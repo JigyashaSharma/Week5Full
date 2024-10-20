@@ -27,7 +27,7 @@ public partial class IndustryConnectWeek2Context : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer();
+        => optionsBuilder.UseSqlServer("Server=localhost;Initial Catalog=IndustryConnectWeek2;Integrated Security=True;TrustServerCertificate=Yes");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -49,12 +49,12 @@ public partial class IndustryConnectWeek2Context : DbContext
             entity.Property(e => e.CustomerId).HasColumnName("Customer Id");
             entity.Property(e => e.DateSold).HasColumnType("datetime");
             entity.Property(e => e.FirstName).HasMaxLength(30);
+            entity.Property(e => e.FullName)
+                .HasMaxLength(71)
+                .HasColumnName("Full Name");
             entity.Property(e => e.LastName).HasMaxLength(40);
             entity.Property(e => e.Name).HasMaxLength(100);
             entity.Property(e => e.Price).HasColumnType("money");
-            entity.Property(e => e.TotalPurchases)
-                .HasColumnType("money")
-                .HasColumnName("Total Purchases");
         });
 
         modelBuilder.Entity<Product>(entity =>
@@ -88,6 +88,7 @@ public partial class IndustryConnectWeek2Context : DbContext
         {
             entity.ToTable("Store");
 
+            entity.Property(e => e.Location).HasMaxLength(100);
             entity.Property(e => e.Name).HasMaxLength(100);
         });
 

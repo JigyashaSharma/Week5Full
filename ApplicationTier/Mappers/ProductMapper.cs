@@ -1,11 +1,11 @@
-﻿using IndustryConnect_Week5_WebApi.Dtos;
+﻿using IndustryConnect_Week5_WebApi.ApplicationTier.Dtos;
 using IndustryConnect_Week5_WebApi.Models;
 
-namespace IndustryConnect_Week5_WebApi.Mappers
+namespace IndustryConnect_Week5_WebApi.ApplicationTier.Mappers
 {
     public static class ProductMapper
     {
-        public static Product DtoToEntity(ProductDto productDto)
+        public static Product ProductDtoToEntity(ProductDto productDto)
         {
             var entity = new Product
             {
@@ -19,7 +19,7 @@ namespace IndustryConnect_Week5_WebApi.Mappers
             return entity;
         }
 
-        public static ProductDto EntityToDto(Product product)
+        public static ProductDto EntityToProductDto(Product product)
         {
             var dto = new ProductDto
             {

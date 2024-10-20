@@ -4,8 +4,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using IndustryConnect_Week5_WebApi.Models;
+using IndustryConnect_Week5_WebApi.ApplicationTier.Interfaces;
+using IndustryConnect_Week5_WebApi.ApplicationTier.Dtos;
+using IndustryConnectWeek5WebApi.ApplicationTier.Common;
+using IndustryConnect_Week5_WebApi.ApplicationTier.Classes;
+using Microsoft.AspNetCore.JsonPatch;
 
 namespace IndustryConnect_Week5_WebApi.Controllers
 {
@@ -13,95 +16,144 @@ namespace IndustryConnect_Week5_WebApi.Controllers
     [ApiController]
     public class StoreController : ControllerBase
     {
-        private readonly IndustryConnectWeek2Context _context;
-
-        public StoreController(IndustryConnectWeek2Context context)
+        private readonly IStoreMethods _storeMethods;
+        public StoreController(IStoreMethods storeMethods)
         {
-            _context = context;
+            _storeMethods = storeMethods;
         }
 
         // GET: api/Store
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Store>>> GetStores()
+        public async Task<ActionResult<IEnumerable<PagedDtos<StoreDto>>>> GetStores(int pageNumber, int pageSize)
         {
-            return await _context.Stores.ToListAsync();
+            try
+            {
+                var pagedResult = await _storeMethods.GetAllStoresAsync(pageNumber, pageSize);
+                if (pagedResult == null)
+                {
+                    return NotFound();
+                }
+
+                return Ok(pagedResult);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+
         }
 
         // GET: api/Store/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Store>> GetStore(int id)
+        public async Task<ActionResult<StoreDto>> GetStore(int id)
         {
-            var store = await _context.Stores.FindAsync(id);
-
-            if (store == null)
+            try
             {
-                return NotFound();
+                var storeDto = await _storeMethods.GetStoreAsync(id);
+                if (storeDto == null)
+                {
+                    return NotFound();
+                }
+                return storeDto;
             }
-
-            return store;
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         // PUT: api/Store/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutStore(int id, Store store)
+        public async Task<ActionResult<StoreDto>> Put(int id, StoreDto? storeDto)
         {
-            if (id != store.Id)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(store).State = EntityState.Modified;
-
             try
             {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!StoreExists(id))
+                if (storeDto == null)
                 {
-                    return NotFound();
+                    return BadRequest("Provide some value for Store.");
                 }
-                else
-                {
-                    throw;
-                }
-            }
 
-            return NoContent();
+                storeDto = await _storeMethods.UpdateStoreAsync(id, storeDto);
+                return Ok(storeDto);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         // POST: api/Store
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Store>> PostStore(Store store)
+        public async Task<ActionResult<StoreDto>> Post(StoreDto? storeDto)
         {
-            _context.Stores.Add(store);
-            await _context.SaveChangesAsync();
+            try
+            {
+                if (storeDto == null)
+                {
+                    return BadRequest("Give proper values for Store.");
+                }
 
-            return CreatedAtAction("GetStore", new { id = store.Id }, store);
+                storeDto = await _storeMethods.AddStoreAsync(storeDto);
+                return Created("", storeDto);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
-        // DELETE: api/Store/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteStore(int id)
+        [HttpPatch("{id}")]
+        public async Task<ActionResult<StoreDto>> Patch(int id, [FromBody] JsonPatchDocument<StoreDto> patchDto)
         {
-            var store = await _context.Stores.FindAsync(id);
-            if (store == null)
+            try
             {
-                return NotFound();
+                if (patchDto == null)
+                {
+                    return BadRequest("No values were send to change");
+                }
+
+                var storeDto = await _storeMethods.GetStoreAsync(id);
+
+                if (storeDto == null)
+                {
+                    return BadRequest($"Store with ID {id} was not found.");
+                }
+
+                patchDto.ApplyTo(storeDto);
+
+                storeDto = await _storeMethods.PatchStoreDetails(id, storeDto);
+
+                return Ok(storeDto);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
             }
 
-            _context.Stores.Remove(store);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
         }
-
-        private bool StoreExists(int id)
+        // DELETE: api/Store/5
+        [HttpDelete("{id}")]
+        public async Task<ActionResult<string>> DeleteStore(int id)
         {
-            return _context.Stores.Any(e => e.Id == id);
+            try
+            {
+                var status = await _storeMethods.DeleteStoreAsync(id);
+
+                if (status == StatusEnum.NoContent)
+                {
+                    return $"Store with Id: {id} deleted successfully!!!";
+                }
+                else
+                {
+                    return NotFound();
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
     }
 }

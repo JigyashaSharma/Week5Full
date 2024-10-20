@@ -3,28 +3,29 @@ using IndustryConnect_Week5_WebApi.ApplicationTier.Interfaces;
 using IndustryConnectWeek5WebApi.ApplicationTier.Common;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
+
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
-namespace IndustryConnectWeek5WebApi.Controllers
+namespace IndustryConnect_Week5_WebApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ProductController : ControllerBase
+    public class CustomerController : ControllerBase
     {
-        private readonly IProductMethods _productMethods;
+        private readonly ICustomerMethods _customerMethods;
 
-        public ProductController(IProductMethods productMethods)
+        public CustomerController(ICustomerMethods customerMethods)
         {
-            _productMethods = productMethods;
+            _customerMethods = customerMethods;
         }
 
-        // GET: api/<ProductController>
+        // GET: api/<CustomerController>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<PagedDtos<ProductDto>>>> GetProducts(int pageNumber, int pageSize)
+        public async Task<ActionResult<IEnumerable<PagedDtos<CustomerDto>>>> GetAllCustomer(int pageNumber, int pageSize)
         {
             try
             {
-                var pagedResult = await _productMethods.GetAllProductsAsync(pageNumber, pageSize);
+                var pagedResult = await _customerMethods.GetAllCustomersAsync(pageNumber, pageSize);
                 if (pagedResult == null)
                 {
                     return NotFound();
@@ -36,21 +37,20 @@ namespace IndustryConnectWeek5WebApi.Controllers
             {
                 return BadRequest(ex.Message);
             }
-
         }
 
-        // GET api/<ProductController>/5
+        // GET: api/<CustomerController>/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<ProductDto>> GetProduct(int id)
+        public async Task<ActionResult<CustomerDto>> GetCustomer(int id)
         {
             try
             {
-                var productDto = await _productMethods.GetProductAsync(id);
-                if (productDto == null)
+                var customerDto = await _customerMethods.GetCustomerAsync(id);
+                if (customerDto == null)
                 {
                     return NotFound();
                 }
-                return productDto;
+                return customerDto;
             }
             catch (Exception ex)
             {
@@ -58,19 +58,19 @@ namespace IndustryConnectWeek5WebApi.Controllers
             }
         }
 
-        // POST api/<ProductController>
+        // POST api/<CustomerController>
         [HttpPost]
-        public async Task<ActionResult<ProductDto>> Post(ProductDto? productDto)
+        public async Task<ActionResult<CustomerDto>> Post([FromBody] CustomerDto customerDto)
         {
             try
             {
-                if (productDto == null)
+                if (customerDto == null)
                 {
-                    return BadRequest("Give proper values for Product");
+                    return BadRequest("Give proper values for Customer.");
                 }
 
-                productDto = await _productMethods.AddProductAsync(productDto);
-                return Created("", productDto);
+                customerDto = await _customerMethods.AddCustomerAsync(customerDto);
+                return Created("", customerDto);
             }
             catch (Exception ex)
             {
@@ -78,19 +78,19 @@ namespace IndustryConnectWeek5WebApi.Controllers
             }
         }
 
-        // PUT api/<ProductController>/5
+        // PUT api/<CustomerController>/5
         [HttpPut("{id}")]
-        public async Task<ActionResult<ProductDto>> Put(int id, ProductDto? productDto)
+        public async Task<ActionResult<CustomerDto>> Put(int id, CustomerDto? customerDto)
         {
             try
             {
-                if (productDto == null)
+                if (customerDto == null)
                 {
-                    return BadRequest("Provide some value for Product");
+                    return BadRequest("Provide some value for Customer");
                 }
 
-                productDto = await _productMethods.UpdateProductAsync(id, productDto);
-                return Ok(productDto);
+                customerDto = await _customerMethods.UpdateCustomerAsync(id, customerDto);
+                return Ok(customerDto);
             }
             catch (Exception ex)
             {
@@ -99,7 +99,7 @@ namespace IndustryConnectWeek5WebApi.Controllers
         }
 
         [HttpPatch("{id}")]
-        public async Task<ActionResult<ProductDto>> Patch(int id, [FromBody] JsonPatchDocument<ProductDto> patchDto)
+        public async Task<ActionResult<CustomerDto>> Patch(int id, [FromBody] JsonPatchDocument<CustomerDto> patchDto)
         {
             try
             {
@@ -108,18 +108,18 @@ namespace IndustryConnectWeek5WebApi.Controllers
                     return BadRequest("No values were send to change");
                 }
 
-                var productDto = await _productMethods.GetProductAsync(id);
+                var customerDto = await _customerMethods.GetCustomerAsync(id);
 
-                if (productDto == null)
+                if (customerDto == null)
                 {
-                    return BadRequest($"Product with ID {id} was not found.");
+                    return BadRequest($"Customer with ID {id} was not found.");
                 }
 
-                patchDto.ApplyTo(productDto);
+                patchDto.ApplyTo(customerDto);
 
-                productDto = await _productMethods.PatchProductDetails(id, productDto);
+                customerDto = await _customerMethods.PatchCustomerDetails(id, customerDto);
 
-                return Ok(productDto);
+                return Ok(customerDto);
             }
             catch (Exception ex)
             {
@@ -128,17 +128,17 @@ namespace IndustryConnectWeek5WebApi.Controllers
 
         }
 
-        // DELETE api/<ProductController>/5
+        // DELETE api/<CustomerController>/5
         [HttpDelete("{id}")]
         public async Task<ActionResult<string>> Delete(int id)
         {
             try
             {
-                var status = await _productMethods.DeleteProductAsync(id);
+                var status = await _customerMethods.DeleteCustomerAsync(id);
 
                 if (status == StatusEnum.NoContent)
                 {
-                    return $"Product with Id: {id} deleted successfully!!!";
+                    return $"Customer with Id: {id} deleted successfully!!!";
                 }
                 else
                 {

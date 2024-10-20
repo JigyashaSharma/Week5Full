@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using IndustryConnect_Week5_WebApi.Models;
+﻿using Microsoft.AspNetCore.Mvc;
+using IndustryConnect_Week5_WebApi.ApplicationTier.Dtos;
+using IndustryConnect_Week5_WebApi.ApplicationTier.Interfaces;
+using Microsoft.AspNetCore.JsonPatch;
+using IndustryConnectWeek5WebApi.ApplicationTier.Common;
 
 namespace IndustryConnect_Week5_WebApi.Controllers
 {
@@ -13,96 +10,146 @@ namespace IndustryConnect_Week5_WebApi.Controllers
     [ApiController]
     public class SaleController : ControllerBase
     {
-        private readonly IndustryConnectWeek2Context _context;
+        private readonly ISaleMethods _saleMethods;
 
-        public SaleController(IndustryConnectWeek2Context context)
+        public SaleController(ISaleMethods saleMethods)
         {
-            _context = context;
+            _saleMethods = saleMethods;
         }
 
         // GET: api/Sale
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Sale>>> GetSales()
+        public async Task<ActionResult<IEnumerable<PagedDtos<SaleDto>>>> GetAllSales(int pageNumber, int pageSize)
         {
-            return await _context.Sales.Include(p => p.Product)
-                .Include(c => c.Customer).ToListAsync();
+            try
+            {
+                var pagedResult = await _saleMethods.GetAllSalesAsync(pageNumber, pageSize);
+                if (pagedResult == null)
+                {
+                    return NotFound();
+                }
+
+                return Ok(pagedResult);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         // GET: api/Sale/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Sale>> GetSale(int id)
+        public async Task<ActionResult<SaleDto>> GetSaleAsync(int id)
         {
-            var sale = await _context.Sales.FindAsync(id);
-
-            if (sale == null)
+            try
             {
-                return NotFound();
+                var saleDto = await _saleMethods.GetSaleAsync(id);
+                if (saleDto == null)
+                {
+                    return NotFound();
+                }
+                return saleDto;
             }
-
-            return sale;
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         // PUT: api/Sale/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutSale(int id, Sale sale)
+        [HttpPost]
+        public async Task<ActionResult<SaleDto>> Post(SaleDto? saleDto)
         {
-            if (id != sale.Id)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(sale).State = EntityState.Modified;
-
             try
             {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!SaleExists(id))
+                if (saleDto == null)
                 {
-                    return NotFound();
+                    return BadRequest("Give proper values for sale.");
                 }
-                else
-                {
-                    throw;
-                }
-            }
 
-            return NoContent();
+                saleDto = await _saleMethods.AddSaleAsync(saleDto);
+                return Created("", saleDto);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         // POST: api/Sale
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost]
-        public async Task<ActionResult<Sale>> PostSale(Sale sale)
+        [HttpPut("{id}")]
+        public async Task<ActionResult<SaleDto>> Put(int id, SaleDto? saleDto)
         {
-            _context.Sales.Add(sale);
-            await _context.SaveChangesAsync();
+            try
+            {
+                if (saleDto == null)
+                {
+                    return BadRequest("Provide some value for Sale");
+                }
 
-            return CreatedAtAction("GetSale", new { id = sale.Id }, sale);
+                saleDto = await _saleMethods.UpdateSaleAsync(id, saleDto);
+                return Ok(saleDto);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPatch("{id}")]
+        public async Task<ActionResult<SaleDto>> Patch(int id, [FromBody] JsonPatchDocument<SaleDto> patchDto)
+        {
+            try
+            {
+                if (patchDto == null)
+                {
+                    return BadRequest("No values were send to change");
+                }
+
+                var saleDto = await _saleMethods.GetSaleAsync(id);
+
+                if (saleDto == null)
+                {
+                    return BadRequest($"Sale with ID {id} was not found.");
+                }
+
+                patchDto.ApplyTo(saleDto);
+
+                saleDto = await _saleMethods.PatchSaleDetails(id, saleDto);
+
+                return Ok(saleDto);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+
         }
 
         // DELETE: api/Sale/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteSale(int id)
+        public async Task<ActionResult<string>> Delete(int id)
         {
-            var sale = await _context.Sales.FindAsync(id);
-            if (sale == null)
+            try
             {
-                return NotFound();
+                var status = await _saleMethods.DeleteSaleAsync(id);
+
+                if (status == StatusEnum.NoContent)
+                {
+                    return $"Sale with Id: {id} deleted successfully!!!";
+                }
+                else
+                {
+                    return NotFound();
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
             }
 
-            _context.Sales.Remove(sale);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
-
-        private bool SaleExists(int id)
-        {
-            return _context.Sales.Any(e => e.Id == id);
         }
     }
 }

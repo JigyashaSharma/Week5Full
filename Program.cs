@@ -1,3 +1,5 @@
+using IndustryConnect_Week5_WebApi.ApplicationTier.Classes;
+using IndustryConnect_Week5_WebApi.ApplicationTier.Interfaces;
 using IndustryConnect_Week5_WebApi.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,6 +11,12 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddControllers().AddNewtonsoftJson();
+
+builder.Services.AddScoped<IProductMethods, ProductMethods>();
+builder.Services.AddScoped<ICustomerMethods, CustomerMethods>();
+builder.Services.AddScoped<ISaleMethods, SaleMethods>();
+builder.Services.AddScoped<IStoreMethods, StoreMethods>();
 
 builder.Services.AddDbContext<IndustryConnectWeek2Context>(option =>
     option.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnectionString")));
